@@ -71,7 +71,7 @@ double calculate_diff(int N, double h, double U_new[N+1][N+1], double U_old[N+1]
 }
 
 
-double calculate_max_diff(int N, double U_answer[N+1][N+1], double U_new[N+1][N+1]){
+double calculate_max_abs_diff(int N, double U_answer[N+1][N+1], double U_new[N+1][N+1]){
 	
 	double max_value = 0.0, diff = 0.0;
 
@@ -99,16 +99,27 @@ void g_s_method(int N, double h, double U_new[N+1][N+1], double U_old[N+1][N+1],
 			U_new[i][j] =  0.25*(U_new[i-1][j] + U_old[i+1][j] + U_new[i][j-1] + U_old[i][j+1] + h*h *F[i][j]);
 }
 
+void sor_method(int N, double h, double w, double U_new[N+1][N+1], double U_old[N+1][N+1], double F[N+1][N+1]){
+	for(int i=1; i <= N-1 ; i++)
+		for(int j=1; j <= N-1 ; j++)
+			U_new[i][j] =  (w/4.0) * (U_new[i-1][j] + U_old[i+1][j] + U_new[i][j-1] + U_old[i][j+1] + h*h *F[i][j]) + (1-w)*U_old[i][j];  
+}
 
 
-
-void call_jacobi(int N, double h, double U_new[N+1][N+1], double U_old[N+1][N+1], double F[N+1][N+1], double U_answer[N+1][N+1]){
+void iterative_method(int N, int option, double h, double U_new[N+1][N+1], double U_old[N+1][N+1], double F[N+1][N+1], double U_answer[N+1][N+1]){
 	
 	double TOL = h*0.00001;
+	/* M_PI, constante definida em math.h	 */
+	double w = 2.0/(1 + sin(M_PI*h));
 	clock_t start = clock();
 
 	for (int iter=0; iter < MAXITER; iter++){
-		jacobi_method(N, h, U_new, U_old, F);
+		if (option == 1)
+			jacobi_method(N, h, U_new, U_old, F);
+		if (option == 2)
+			g_s_method(N, h, U_new, U_old, F);
+		if (option == 3)
+			sor_method(N, h, w, U_new, U_old, F);
 		
 		if ( calculate_diff(N, h, U_new, U_old) <= TOL) {
 			printf("\nConvergiu, N=%d, iteracoes=%d \n", N, iter);
@@ -122,7 +133,7 @@ void call_jacobi(int N, double h, double U_new[N+1][N+1], double U_old[N+1][N+1]
 
 	clock_t stop = clock();
 
-	double max_value = calculate_max_diff(N, U_answer, U_new);
+	double max_value = calculate_max_abs_diff(N, U_answer, U_new);
 
 	double elapsed = (double)(stop - start)  / CLOCKS_PER_SEC;
     printf("Tempo em segundos: %lf\nMax_value = %.9g\n", elapsed, max_value);
@@ -130,24 +141,14 @@ void call_jacobi(int N, double h, double U_new[N+1][N+1], double U_old[N+1][N+1]
 }
 
 
-int main(int argc, char const *argv[])
-{
-	int N;
-	printf("Entre o tamanho de N:\n");
-	scanf("%d", &N);
-
-    if (N <= 1) {
-        printf("Valor precisa ser entre 8 e 512!\n");
-        return 0;
-    }
-	
+void call_methods(int N, int option){
 	double h = 1.0/N;
 	
 	double (*U_answer)[N+1] = malloc((N+1) * sizeof(*U_answer));
 	double (*U_new)[N+1] = malloc((N+1) * sizeof(*U_new));
 	double (*U_old)[N+1] = malloc((N+1) * sizeof(*U_old));
 	double (*F)[N+1] = malloc((N+1) * sizeof(*F));
-	
+
 	initialize_matrix(N, U_new, 0.0);
 	initialize_matrix(N, U_old, 0.0);
 	/* Parte A a matriz F é toda nula */
@@ -157,8 +158,40 @@ int main(int argc, char const *argv[])
 	
 	update_border(N, h, U_new, U_old);
 	
+	iterative_method(N, option, h, U_new, U_old, F, U_answer);
 
-	call_jacobi(N, h, U_new, U_old, F, U_answer);
+	free(U_answer); free(U_new); free(U_old); free(F);
+}
+
+
+
+int main(int argc, char const *argv[])
+{
+
+	int N[4] = {8, 16, 32, 64};
+
+	/*
+	for (int i = 0; i < 4; ++i)
+	{	
+		printf("JACOBI");
+		call_methods(N[i], 1);
+		printf("\n");
+	}
+	
+	for (int i = 0; i < 4; ++i)
+	{	
+		printf("GAUSS-SEIDEL");
+		call_methods(N[i], 2);
+		printf("\n");
+	}
+	*/
+
+	for (int i = 0; i < 4; ++i)
+	{	
+		printf("SOR");
+		call_methods(N[i], 3);
+		printf("\n");
+	}
 
 	
 	/*
@@ -170,7 +203,7 @@ int main(int argc, char const *argv[])
 	print_matrix(N, U_new);	
 	*/
 
-	free(U_answer); free(U_new); free(U_old); free(F);
+	
 
 	return 0;
 }
