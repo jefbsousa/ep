@@ -106,11 +106,26 @@ void sor_method(int N, double h, double w, double U_new[N+1][N+1], double U_old[
 }
 
 
+void write_results_disk_1A(int option, int N, int n_iter, double elapsed, double max_err_value){
+	FILE *f = fopen("/home/jeferson/usp/edp/ep/C/results_1A.csv", "a");
+	
+	if (option == 1)
+		fprintf(f, "Jacobi;%d;%d;%lf;%lf\n",N,n_iter,elapsed,max_err_value);
+	if (option == 2)
+		fprintf(f, "Gauss-Seidel;%d;%d;%lf;%lf\n",N,n_iter,elapsed,max_err_value);
+	if (option == 3)
+		fprintf(f, "SOR;%d;%d;%lf;%lf\n",N,n_iter,elapsed,max_err_value);
+
+	fclose(f); 
+}
+
+
 void iterative_method(int N, int option, double h, double U_new[N+1][N+1], double U_old[N+1][N+1], double F[N+1][N+1], double U_answer[N+1][N+1]){
 	
-	double TOL = h*0.00001;
 	/* M_PI, constante definida em math.h	 */
-	double w = 2.0/(1 + sin(M_PI*h));
+	double TOL = h*0.00001, w = 2.0/(1 + sin(M_PI*h));
+	int n_iter = 0;
+
 	clock_t start = clock();
 
 	for (int iter=0; iter < MAXITER; iter++){
@@ -123,12 +138,13 @@ void iterative_method(int N, int option, double h, double U_new[N+1][N+1], doubl
 		
 		if ( calculate_diff(N, h, U_new, U_old) <= TOL) {
 			printf("\nConvergiu, N=%d, iteracoes=%d \n", N, iter);
+			n_iter = iter;
 			break;
 		}
-		
 		//memcpy(U_old, U_new, (N+1)*(N+1));
 
 		copy_m2_to_m1(N, U_old, U_new);
+		n_iter = iter;
 	}
 
 	clock_t stop = clock();
@@ -138,6 +154,7 @@ void iterative_method(int N, int option, double h, double U_new[N+1][N+1], doubl
 	double elapsed = (double)(stop - start)  / CLOCKS_PER_SEC;
     printf("Tempo em segundos: %lf\nMax_value = %.9g\n", elapsed, max_value);
 
+    write_results_disk_1A(option,  N,  n_iter,  elapsed,  max_value);
 }
 
 
@@ -168,31 +185,34 @@ void call_methods(int N, int option){
 int main(int argc, char const *argv[])
 {
 
-	int N[4] = {8, 16, 32, 64};
+	int array_N[5] = {8, 16, 32, 64, 128};
+	/*Para pegar o tamanho do array, dividimos pelo tamanho de cada inteiro(4 bytes)*/
+	int length_array_N = sizeof(array_N)/4;	
 
-	/*
-	for (int i = 0; i < 4; ++i)
+	for (int i = 0; i < length_array_N; ++i)
 	{	
 		printf("JACOBI");
-		call_methods(N[i], 1);
+		call_methods(array_N[i], 1);
 		printf("\n");
 	}
 	
-	for (int i = 0; i < 4; ++i)
+	
+	for (int i = 0; i < length_array_N; ++i)
 	{	
 		printf("GAUSS-SEIDEL");
-		call_methods(N[i], 2);
+		call_methods(array_N[i], 2);
 		printf("\n");
 	}
-	*/
-
-	for (int i = 0; i < 4; ++i)
+	
+	
+	for (int i = 0; i < length_array_N; i++)
 	{	
 		printf("SOR");
-		call_methods(N[i], 3);
+		call_methods(array_N[i], 3);
 		printf("\n");
 	}
-
+	
+	
 	
 	/*
 	printf("\n");
