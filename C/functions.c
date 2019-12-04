@@ -1,11 +1,5 @@
-#include <stdio.h>
-#include <string.h>
-#include <stdlib.h>
-#include <math.h>
-#include <time.h>
 
-#define MAXITER 100000
-#define alpha 3.0
+#include "functions.h"
 
 
 void print_matrix(int N, double m[N+1][N+1]){
@@ -16,71 +10,18 @@ void print_matrix(int N, double m[N+1][N+1]){
 	}
 }
 
-
-
 void initialize_matrix(int N, double m[N+1][N+1], double value){
 
 	for(int i=0; i <= N; i++)
 		for(int j=0; j <= N; j++)
 			m[i][j] = value;
-}			
-
-
-void initialize_U_answer_1A(int N, double m[N+1][N+1], double h){
-	
-	for(int i=0; i <= N; i++)
-		for(int j=0; j <= N; j++)
-			m[i][j] = (alpha * exp(h*i) * sin(h*j));
-}	
+}
 
 
 void copy_m2_to_m1(int N, double m_1[N+1][N+1], double m_2[N+1][N+1]){
 	for(int i=0; i <= N; i++)
 		for(int j=0; j <= N; j++)
 			m_1[i][j] = m_2[i][j];
-}
-
-
-void update_border(int N, double h, double U_new[N+1][N+1], double U_old[N+1][N+1]){
-
-	for(int i=0; i <= N; i++){
-		U_old[i][0] = alpha * exp(h*i) * sin(h*0.0);
-		U_old[i][N] = alpha * exp(h*i) * sin(h*N);
-	}
-
-	for(int j=0; j <= N; j++){
-		U_old[0][j] = alpha * exp(h*0.0) * sin(h*j);
-		U_old[N][j] = alpha * exp(h*N) * sin(h*j);
-	}	
-
-	copy_m2_to_m1(N, U_new, U_old);
-
-}
-
-
-double calculate_diff(int N, double h, double U_new[N+1][N+1], double U_old[N+1][N+1]){
-	double sum = 0.0;
-	for(int i=0; i <= N; i++)
-		for(int j=0; j <= N; j++)
-			sum += pow(fabs(U_new[i][j] - U_old[i][j]), 2);
-
-	return (h*h * sqrt(sum));
-}
-
-
-double calculate_max_abs_diff(int N, double U_answer[N+1][N+1], double U_new[N+1][N+1]){
-	
-	double max_value = 0.0, diff = 0.0;
-
-	for(int i=0; i <= N; i++)
-		for(int j=0; j <= N; j++){
-			diff = fabs(U_answer[i][j] - U_new[i][j]);
-
-			if (diff > max_value)
-				max_value = diff;
-		}
-
-	return max_value;
 }
 
 
@@ -103,6 +44,17 @@ void sor_method(int N, double h, double w, double U_new[N+1][N+1], double U_old[
 }
 
 
+
+
+double calculate_diff(int N, double h, double U_new[N+1][N+1], double U_old[N+1][N+1]){
+	double sum = 0.0;
+	for(int i=0; i <= N; i++)
+		for(int j=0; j <= N; j++)
+			sum += pow(fabs(U_new[i][j] - U_old[i][j]), 2);
+
+	return (h*h * sqrt(sum));
+}
+
 void write_results_disk_1A(int option, int N, int n_iter, double elapsed, double max_err_value){
 	FILE *f = fopen("/home/jeferson/usp/edp/ep/C/results_1A.csv", "a");
 	
@@ -120,7 +72,7 @@ void write_results_disk_1A(int option, int N, int n_iter, double elapsed, double
 void iterative_method(int N, int option, double h, double U_new[N+1][N+1], double U_old[N+1][N+1], double F[N+1][N+1], double U_answer[N+1][N+1]){
 	
 	/* M_PI, constante definida em math.h	 */
-	double TOL = h*0.00001, w = 2.0/(1 + 2*sin(M_PI*h));
+	double TOL = h*0.00001, w = 2.0/(1 + sin(M_PI*h));
 	int n_iter = 0;
 
 	clock_t start = clock();
@@ -150,11 +102,11 @@ void iterative_method(int N, int option, double h, double U_new[N+1][N+1], doubl
 	double elapsed = (double)(stop - start)  / CLOCKS_PER_SEC;
     printf("Tempo em segundos: %lf\nMax_value = %.9g\n", elapsed, max_value);
 
-    write_results_disk_1A(option,  N,  n_iter,  elapsed,  max_value);
+    //write_results_disk_1A(option,  N,  n_iter,  elapsed,  max_value);
 }
 
 
-void call_methods(int N, int option){
+void call_methods(int N, int option, int exercise_opt){
 	double h = 1.0/N;
 	
 	double (*U_answer)[N+1] = malloc((N+1) * sizeof(*U_answer));
@@ -164,50 +116,30 @@ void call_methods(int N, int option){
 
 	initialize_matrix(N, U_new, 0.0);
 	initialize_matrix(N, U_old, 0.0);
+
+
 	/* Parte A a matriz F é toda nula */
 	initialize_matrix(N, F, 0.0);
 
+
 	initialize_U_answer_1A(N, U_answer, h);
 	
-	update_border(N, h, U_new, U_old);
+	void (*update_border_ptr)(int, double, double[N+1][N+1], double[N+1][N+1]);
+	if (exercise_opt == 1)
+		update_border_ptr = &update_border_1A;
 	
+
+
+	(*update_border_ptr)(N, h, U_new, U_old);
+	
+
 	iterative_method(N, option, h, U_new, U_old, F, U_answer);
 
 	free(U_answer); free(U_new); free(U_old); free(F);
 }
 
 
-
-int main(int argc, char const *argv[])
-{
-
-	int array_N[7] = {8, 16, 32, 64, 128, 256, 512};
-	/*Para pegar o tamanho do array, dividimos pelo tamanho de cada inteiro(4 bytes)*/
-	int length_array_N = sizeof(array_N)/4;	
-
-	/*
-	for (int i = 0; i < length_array_N; ++i)
-	{	
-		printf("JACOBI");
-		call_methods(array_N[i], 1);
-		printf("\n");
-	}
-	
-	
-	for (int i = 0; i < length_array_N; ++i)
-	{	
-		printf("GAUSS-SEIDEL");
-		call_methods(array_N[i], 2);
-		printf("\n");
-	}
-	
-	*/
-	for (int i = 0; i < length_array_N; i++)
-	{	
-		printf("SOR");
-		call_methods(array_N[i], 3);
-		printf("\n");
-	}
-	
-	return 0;
+void test_pointer(double arg, int arg2){
+	printf("%.9g, %d\n", arg, arg2);
 }
+
