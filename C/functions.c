@@ -45,7 +45,6 @@ void sor_method(int N, double h, double w, double U_new[N+1][N+1], double U_old[
 
 
 
-
 double calculate_diff(int N, double h, double U_new[N+1][N+1], double U_old[N+1][N+1]){
 	double sum = 0.0;
 	for(int i=0; i <= N; i++)
@@ -55,24 +54,11 @@ double calculate_diff(int N, double h, double U_new[N+1][N+1], double U_old[N+1]
 	return (h*h * sqrt(sum));
 }
 
-void write_results_disk_1A(int option, int N, int n_iter, double elapsed, double max_err_value){
-	FILE *f = fopen("/home/jeferson/usp/edp/ep/C/results_1A.csv", "a");
-	
-	if (option == 1)
-		fprintf(f, "Jacobi;%d;%d;%lf;%lf\n",N,n_iter,elapsed,max_err_value);
-	if (option == 2)
-		fprintf(f, "Gauss-Seidel;%d;%d;%lf;%lf\n",N,n_iter,elapsed,max_err_value);
-	if (option == 3)
-		fprintf(f, "SOR;%d;%d;%lf;%lf\n",N,n_iter,elapsed,max_err_value);
 
-	fclose(f); 
-}
-
-
-void iterative_method(int N, int option, double h, double U_new[N+1][N+1], double U_old[N+1][N+1], double F[N+1][N+1], double U_answer[N+1][N+1]){
+void iterative_method(int N, int option, int exercise_opt, double U_new[N+1][N+1], double U_old[N+1][N+1], double F[N+1][N+1]){
 	
 	/* M_PI, constante definida em math.h	 */
-	double TOL = h*0.00001, w = 2.0/(1 + sin(M_PI*h));
+	double h=1.0/N, TOL = h*0.00000001, w = 2.0/(1 + sin(M_PI*h));
 	int n_iter = 0;
 
 	clock_t start = clock();
@@ -96,20 +82,34 @@ void iterative_method(int N, int option, double h, double U_new[N+1][N+1], doubl
 	}
 
 	clock_t stop = clock();
-
-	double max_value = calculate_max_abs_diff(N, U_answer, U_new);
-
 	double elapsed = (double)(stop - start)  / CLOCKS_PER_SEC;
-    printf("Tempo em segundos: %lf\nMax_value = %.9g\n", elapsed, max_value);
 
-    //write_results_disk_1A(option,  N,  n_iter,  elapsed,  max_value);
+	if(exercise_opt == 1){
+		double (*U_answer)[N+1] = malloc((N+1) * sizeof(*U_answer));
+		initialize_U_answer_1A(N, U_answer, h);
+		double max_err_value = calculate_max_abs_diff(N, U_answer, U_new);
+		free(U_answer); 
+		write_results_disk_1( option,  N,  n_iter,  elapsed,  max_err_value);
+	}
+	if(exercise_opt == 2){
+		double (*U_answer)[N+1] = malloc((N+1) * sizeof(*U_answer));
+		initialize_U_answer_1B(N, U_answer, h);
+		double max_err_value = calculate_max_abs_diff(N, U_answer, U_new);
+		free(U_answer); 
+		write_results_disk_1( option,  N,  n_iter,  elapsed, max_err_value);
+	}
+	if(exercise_opt == 3 || exercise_opt == 4){
+		write_results_disk_2(option,  N,  n_iter,  elapsed);
+	}
+		
+    //printf("Tempo em segundos: %lf\nMax_value = %.9g\n", elapsed, max_value);
+    
 }
 
 
 void call_methods(int N, int option, int exercise_opt){
 	double h = 1.0/N;
 	
-	double (*U_answer)[N+1] = malloc((N+1) * sizeof(*U_answer));
 	double (*U_new)[N+1] = malloc((N+1) * sizeof(*U_new));
 	double (*U_old)[N+1] = malloc((N+1) * sizeof(*U_old));
 	double (*F)[N+1] = malloc((N+1) * sizeof(*F));
@@ -118,28 +118,40 @@ void call_methods(int N, int option, int exercise_opt){
 	initialize_matrix(N, U_old, 0.0);
 
 
-	/* Parte A a matriz F é toda nula */
-	initialize_matrix(N, F, 0.0);
-
-
-	initialize_U_answer_1A(N, U_answer, h);
 	
+	/*Dois ponteiros de funções, definidos de acordo com o exercício(exercise_opt)*/
 	void (*update_border_ptr)(int, double, double[N+1][N+1], double[N+1][N+1]);
-	if (exercise_opt == 1)
-		update_border_ptr = &update_border_1A;
-	
+	void (*update_F_ptr)(int, double[N+1][N+1]);
 
-
+	switch(exercise_opt){
+		case 1:
+			update_border_ptr = &update_border_1A;
+			update_F_ptr = &update_F_1A;
+			break;
+		case 2:
+			update_border_ptr = &update_border_1B;	
+			update_F_ptr = &update_F_1B;
+			break;
+		case 3:
+			update_border_ptr = &update_border_2AB;
+			update_F_ptr = &update_F_2A;
+			break;
+		case 4:
+			update_border_ptr = &update_border_2AB;
+			update_F_ptr = &update_F_2B;
+			break;
+		default:
+			printf("\n\nNO CASE FOUND");
+		
+	}
+	/*Preenche as bordas das matrizes U_old e U_new antes do método iterativo*/
 	(*update_border_ptr)(N, h, U_new, U_old);
-	
+	/*Preenche a matriz F de acordo com o exercício*/
+	(*update_F_ptr)(N, F);
 
-	iterative_method(N, option, h, U_new, U_old, F, U_answer);
+	iterative_method(N, option, exercise_opt, U_new, U_old, F);
 
-	free(U_answer); free(U_new); free(U_old); free(F);
+	free(U_new); free(U_old); free(F);
 }
 
-
-void test_pointer(double arg, int arg2){
-	printf("%.9g, %d\n", arg, arg2);
-}
 
