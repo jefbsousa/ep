@@ -4,10 +4,8 @@
 #include <math.h>
 #include <time.h>
 
-
 #define MAXITER 100000
 #define alpha 3.0
-// 8, 16, 32, 64, 128, 256, 512
 
 
 void print_matrix(int N, double m[N+1][N+1]){
@@ -55,7 +53,6 @@ void update_border(int N, double h, double U_new[N+1][N+1], double U_old[N+1][N+
 		U_old[N][j] = alpha * exp(h*N) * sin(h*j);
 	}	
 
-	//memcpy(U_old, U_new, (N+1)*(N+1));
 	copy_m2_to_m1(N, U_new, U_old);
 
 }
@@ -123,7 +120,7 @@ void write_results_disk_1A(int option, int N, int n_iter, double elapsed, double
 void iterative_method(int N, int option, double h, double U_new[N+1][N+1], double U_old[N+1][N+1], double F[N+1][N+1], double U_answer[N+1][N+1]){
 	
 	/* M_PI, constante definida em math.h	 */
-	double TOL = h*0.00001, w = 2.0/(1 + sin(M_PI*h));
+	double TOL = h*0.00001, w = 2.0/(1 + 2*sin(M_PI*h));
 	int n_iter = 0;
 
 	clock_t start = clock();
@@ -141,7 +138,6 @@ void iterative_method(int N, int option, double h, double U_new[N+1][N+1], doubl
 			n_iter = iter;
 			break;
 		}
-		//memcpy(U_old, U_new, (N+1)*(N+1));
 
 		copy_m2_to_m1(N, U_old, U_new);
 		n_iter = iter;
@@ -185,10 +181,11 @@ void call_methods(int N, int option){
 int main(int argc, char const *argv[])
 {
 
-	int array_N[5] = {8, 16, 32, 64, 128};
+	int array_N[7] = {8, 16, 32, 64, 128, 256, 512};
 	/*Para pegar o tamanho do array, dividimos pelo tamanho de cada inteiro(4 bytes)*/
 	int length_array_N = sizeof(array_N)/4;	
 
+	/*
 	for (int i = 0; i < length_array_N; ++i)
 	{	
 		printf("JACOBI");
@@ -204,7 +201,7 @@ int main(int argc, char const *argv[])
 		printf("\n");
 	}
 	
-	
+	*/
 	for (int i = 0; i < length_array_N; i++)
 	{	
 		printf("SOR");
@@ -212,18 +209,5 @@ int main(int argc, char const *argv[])
 		printf("\n");
 	}
 	
-	
-	
-	/*
-	printf("\n");
-	print_matrix(N, U_answer);
-	printf("\n");
-	print_matrix(N, U_old);
-	printf("\n");
-	print_matrix(N, U_new);	
-	*/
-
-	
-
 	return 0;
 }
