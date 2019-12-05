@@ -4,7 +4,7 @@
 #include <math.h>
 #include <time.h>
 
-#define MAXITER 100000
+#define MAXITER 150000
 #define alpha 3.0
 
 

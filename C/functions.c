@@ -58,7 +58,7 @@ double calculate_diff(int N, double h, double U_new[N+1][N+1], double U_old[N+1]
 void iterative_method(int N, int option, int exercise_opt, double U_new[N+1][N+1], double U_old[N+1][N+1], double F[N+1][N+1]){
 	
 	/* M_PI, constante definida em math.h	 */
-	double h=1.0/N, TOL = h*0.00000001, w = 2.0/(1 + sin(M_PI*h));
+	double h=1.0/N, TOL = h*0.00001, w = 2.0/(1 + sin(M_PI*h));
 	int n_iter = 0;
 
 	clock_t start = clock();
@@ -72,7 +72,7 @@ void iterative_method(int N, int option, int exercise_opt, double U_new[N+1][N+1
 			sor_method(N, h, w, U_new, U_old, F);
 		
 		if ( calculate_diff(N, h, U_new, U_old) <= TOL) {
-			printf("\nConvergiu, N=%d, iteracoes=%d \n", N, iter);
+			printf("\nConvergiu");
 			n_iter = iter;
 			break;
 		}
@@ -83,6 +83,7 @@ void iterative_method(int N, int option, int exercise_opt, double U_new[N+1][N+1
 
 	clock_t stop = clock();
 	double elapsed = (double)(stop - start)  / CLOCKS_PER_SEC;
+	printf("\nN=%d, iteracoes=%d, tempo(seg):%lf\n", N, n_iter, elapsed);
 
 	if(exercise_opt == 1){
 		double (*U_answer)[N+1] = malloc((N+1) * sizeof(*U_answer));
@@ -101,8 +102,6 @@ void iterative_method(int N, int option, int exercise_opt, double U_new[N+1][N+1
 	if(exercise_opt == 3 || exercise_opt == 4){
 		write_results_disk_2(option,  N,  n_iter,  elapsed);
 	}
-		
-    //printf("Tempo em segundos: %lf\nMax_value = %.9g\n", elapsed, max_value);
     
 }
 
