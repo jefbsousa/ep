@@ -58,7 +58,7 @@ double calculate_diff(int N, double h, double U_new[N+1][N+1], double U_old[N+1]
 void iterative_method(int N, int option, int exercise_opt, double U_new[N+1][N+1], double U_old[N+1][N+1], double F[N+1][N+1]){
 	
 	/* M_PI, constante definida em math.h	 */
-	double h=1.0/N, TOL = h*0.00001, w = 2.0/(1 + sin(M_PI*h));
+	double h=1.0/N, TOL = h*0.00000001, w = 2.0/(1 + sin(M_PI*h));
 	int n_iter = 0;
 
 	clock_t start = clock();

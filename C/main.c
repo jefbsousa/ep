@@ -34,16 +34,18 @@ void exercises(int length_array_N, int array_N[length_array_N], int exercise){
 int main(int argc, char const *argv[])
 {
 
-	int array_N[5] = {8, 16, 32, 64, 128};
+	int array_N[7] = {8, 16, 32, 64, 128, 256, 512};
 	/*Para pegar o tamanho do array, dividimos pelo tamanho de cada inteiro(4 bytes)*/
 	int length_array_N = sizeof(array_N)/4;	
 
 	//terceiro argumento é em relação ao exercício
 	//1A -> 1; 1B -> 2; 2A -> 3; 2B -> 4;
+	
+	/*
 	exercises(length_array_N, array_N, 1);
-	
-	
 	exercises(length_array_N, array_N, 2);
+	*/
+	
 	exercises(length_array_N, array_N, 3);
 	exercises(length_array_N, array_N, 4);
 	
